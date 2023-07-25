@@ -5,3 +5,7 @@ Assembly-CSharp.csproj
 Library
 Logs
 obj
+.vscode/settings.json
+.vs/3DPracties/FileContentIndex/read.lock
+.vs/3DPracties/FileContentIndex/78d8f6d8-36ab-4815-b487-cad95caef01c.vsidx
+3DPracties.sln
