@@ -29,6 +29,7 @@ public class TimerController : MonoBehaviour
             _timerList.AddRange(_timerToAddList);
             _timerToAddList.Clear();
         }
+
         while (++i < _timerList.Count)
         {
             _timerList[i].Tick();
