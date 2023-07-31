@@ -340,6 +340,7 @@ GameObject:
   m_Component:
   - component: {fileID: 158607830}
   - component: {fileID: 158607831}
+  - component: {fileID: 158607832}
   m_Layer: 0
   m_Name: TimerController
   m_TagString: Untagged
@@ -368,9 +369,21 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 158607829}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f58ec25e5960a2e49b8575e012c0b1d9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &158607832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 158607829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fe6e9782799fa347afcd0fec1520c0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &827920536
@@ -449,8 +462,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1691610841}
   - component: {fileID: 1691610842}
-  - component: {fileID: 1691610843}
   - component: {fileID: 1691610844}
+  - component: {fileID: 1691610843}
+  - component: {fileID: 1691610845}
   m_Layer: 5
   m_Name: Content
   m_TagString: Untagged
@@ -508,12 +522,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1691610840}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae39d769d033384b91be91481d73d49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  count: 1000
+  count: 100
 --- !u!114 &1691610844
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -528,6 +542,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HorizontalFit: 0
   m_VerticalFit: 2
+--- !u!114 &1691610845
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1691610840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cb2a4c2f7639af4e839655c63882e85, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  count: 2
 --- !u!1 &1830111988
 GameObject:
   m_ObjectHideFlags: 0
