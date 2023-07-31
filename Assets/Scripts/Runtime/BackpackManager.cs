@@ -146,7 +146,7 @@ public sealed class BackpackManager
     public void RemoveItem(int id, int amount)
     {
         Item toRemove = null;
-        int i = -1;
+        int i = -1;              
         int removed = 0;
         while (++i < items.Length)
         {
