@@ -43,6 +43,7 @@ public class Backpack : MonoBehaviour
         
         if (Input.GetKeyDown(KeyCode.B))
         {
+            Vector2 mousePos = Input.mousePosition;
         }     
     }
 
