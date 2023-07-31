@@ -4,9 +4,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class GridItem : MonoBehaviour,IBeginDragHandler,IDragHandler,IEndDragHandler
+public class GridItem : MonoBehaviour,IBeginDragHandler,IDragHandler,IEndDragHandler,IPointerEnterHandler,IPointerExitHandler
 {
-    public bool Isempty { get { return data == null; } }
+    public bool IsEmpty { get { return data == null; } }
     [SerializeField]
     private Image icon;
     [SerializeField]
@@ -36,6 +36,22 @@ public class GridItem : MonoBehaviour,IBeginDragHandler,IDragHandler,IEndDragHan
         return data;
     }
 
+    public int GetItemCount()
+    {
+        return itemAmount;
+    }
+
+    public bool AddCount(int count,bool isAdd = true)
+    {
+        if(data == null || itemAmount > 99)
+        {
+            return false;
+        }
+        itemAmount = isAdd ? itemAmount + count : itemAmount - count;
+        amount.text = itemAmount.ToString();
+        return true;
+    }
+
     private void UpdateGrid()
     {
         if (data == null)
@@ -59,7 +75,7 @@ public class GridItem : MonoBehaviour,IBeginDragHandler,IDragHandler,IEndDragHan
         }
     }
 
-    public void Clear()
+    public void Clean()
     {
         data = null;
         UpdateGrid();
@@ -74,6 +90,8 @@ public class GridItem : MonoBehaviour,IBeginDragHandler,IDragHandler,IEndDragHan
         dragObject = GameObject.Instantiate(backPack.dragPrefab, backPack.transform);
         dragObject.GetComponent<Image>().sprite = Resources.Load<Sprite>("Images/Icon/" + data.icon);
         isDragging = true;
+        backPack.isDrag = true;
+        backPack.HideTip();
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -89,9 +107,78 @@ public class GridItem : MonoBehaviour,IBeginDragHandler,IDragHandler,IEndDragHan
         isDragging = false;
         Destroy(dragObject);
         dragObject = null;
-        //if ()
-        //{
+        backPack.isDrag = true;
+        if (eventData.pointerCurrentRaycast.gameObject != null)
+        {
+            var temObject = eventData.pointerCurrentRaycast.gameObject;
+            if (temObject.CompareTag("GridItem"))
+            {
+                GridItem tmpGrid = temObject.GetComponent<GridItem>();
+                if (tmpGrid.IsEmpty)
+                {
+                    tmpGrid.SetData(data, itemAmount);
+                    Clean();
+                }
+                else
+                {
+                    if (tmpGrid.GetData().id == data.id)
+                    {
+                        if (data.type == ItemData.ItemType.Normal)
+                        {
+                            if (tmpGrid.AddCount(itemAmount))
+                            {
+                                Clean();
+                                return;
+                            }
+                        }
+                    }
+                    backPack.SwitchGrid(this, tmpGrid);
+                }
+            }
+        }
+       
+    }
 
-        //}
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (backPack.isDrag)
+        {
+            return;
+        }
+        if (data == null)
+        {
+            return;
+        }
+        string tipCount = data.name + "\n" + data.description;
+        if (data.attaack > 0)
+        {
+            tipCount += "\n攻击力：+" + data.attaack; 
+        }
+        if (data.defense > 0)
+        {
+            tipCount += "\n防御力：+" + data.speed;
+        }
+        if (data.speed > 0)
+        {
+            tipCount += "\n速度：+" + data.speed.ToString("F1");
+        }
+        if (data.speed > 0)
+        {
+            tipCount += "\n回血：+" + data.hp;
+        }
+        if (data.mp > 0)
+        {
+            tipCount += "\n回蓝：+" + data.hp;
+        }
+        backPack.ShowTipContent(tipCount, eventData.position);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (backPack.isDrag && data == null)
+        {
+            return;
+        }
+        backPack.HideTip();
     }
 }

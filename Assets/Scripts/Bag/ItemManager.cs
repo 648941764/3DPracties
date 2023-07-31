@@ -49,8 +49,8 @@ public class ItemManager : MonoBehaviour
             tpm.attaack = int.Parse(data[5]);
             tpm.defense = int.Parse(data[6]);
             tpm.speed = float.Parse(data[7]);
-            tpm.hP = int.Parse(data[8]);
-            tpm.mP = int.Parse(data[9]);
+            tpm.hp = int.Parse(data[8]);
+            tpm.mp = int.Parse(data[9]);
             tpm.description = data[10];
             dataList.Add(tpm);
         }

@@ -9,8 +9,8 @@ public class ItemData
     public int attaack;
     public int defense;
     public float speed;
-    public int hP;
-    public int mP;
+    public int hp;
+    public int mp;
     public ItemType type;
     public EquimentType eType;
 
