@@ -16,11 +16,11 @@ public class ItemData
 
     public enum ItemType
     {
-        Equipment,Normal
+        Equipment, Normal
     }
 
     public enum EquimentType
     {
-        None,Weapon,Armor,Shoes
+        None, Weapon, Armor, Shoes
     }
 }
