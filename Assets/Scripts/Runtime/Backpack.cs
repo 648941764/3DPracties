@@ -17,7 +17,7 @@ public class Backpack : MonoBehaviour
     [SerializeField] RectTransform dragLayer;
     [SerializeField] Text infoText;
 
-    [SerializeField] Image hp, mp,hpBuffer,mpBuffer;
+    [SerializeField] Image hp, mp, hpBuffer, mpBuffer;
 
     Dictionary<RectTransform, Image> itemSprites = new Dictionary<RectTransform, Image>();
     Dictionary<RectTransform, Text> itemAmounts = new Dictionary<RectTransform, Text>();
@@ -61,7 +61,8 @@ public class Backpack : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.A))
         {
             int itemId = Random.Range(1001, 1006);
-            int amount = Random.Range(1, 5);
+            int max = itemId <= 1002 ? 6 : 2;
+            int amount = Random.Range(1, max);
             BackpackManager.Instance.AddItem(itemId, amount);
             Debug.Log($"向背包添加id = {itemId}, amount = {amount}");
             ShowAll();
