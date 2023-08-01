@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using System;
+using System.Text;
 using UnityEngine;
 
 public class Item
@@ -11,6 +11,7 @@ public class Item
 
 public sealed class BackpackManager
 {
+    public Player player;
     public const int ITEM_SLOT_CTN = 50;
     // private static readonly Lazy<BackpackManager> sr_Lazy = new Lazy<BackpackManager>(() => _instance = new BackpackManager());
     private static BackpackManager _instance;
@@ -24,7 +25,7 @@ public sealed class BackpackManager
     private Item[] items;
     Dictionary<int, ItemData> itemCfg;
 
-    private BackpackManager() 
+    private BackpackManager()
     {
         items = new Item[ITEM_SLOT_CTN];
         itemCfg = new Dictionary<int, ItemData>();
@@ -55,7 +56,7 @@ public sealed class BackpackManager
     {
         for (int i = 0; i < items.Length; ++i)
         {
-            if (items[i].id == id)
+            if (items[i] != null && items[i].id == id)
             {
                 return items[i];
             }
@@ -82,55 +83,55 @@ public sealed class BackpackManager
             switch (cfg.type)
             {
                 case ItemData.ItemType.Equipment:
-                {
-                    int added = 0;
-                    while (++i < ITEM_SLOT_CTN)
                     {
-                        if (items[i] == null)
+                        int added = 0;
+                        while (++i < ITEM_SLOT_CTN)
                         {
-                            items[i] = new Item() { id = item.id, amount = 1 };
-                            if (++added == item.amount)
+                            if (items[i] == null)
                             {
-                                break;
+                                items[i] = new Item() { id = item.id, amount = 1 };
+                                if (++added == item.amount)
+                                {
+                                    break;
+                                }
                             }
                         }
+                        if (added < item.amount)
+                        {
+                            Debug.Log($"背包已满，有{item.amount - added}个未装入");
+                        }
+                        break;
                     }
-                    if (added < item.amount)
-                    {
-                        Debug.Log($"背包已满，有{item.amount - added}个未装入");
-                    }
-                    break;
-                }
                 case ItemData.ItemType.Normal:
-                {
-                    Item exist = null;
-                    while (++i < ITEM_SLOT_CTN)
                     {
-                        if (items[i] != null)
+                        Item exist = null;
+                        while (++i < ITEM_SLOT_CTN)
                         {
-                            if (items[i].id == item.id)
+                            if (items[i] != null)
                             {
-                                exist = items[i];
-                                break;
+                                if (items[i].id == item.id)
+                                {
+                                    exist = items[i];
+                                    break;
+                                }
                             }
                         }
-                    }
-                    if (exist != null)
-                    {
-                        exist.amount += item.amount;
-                    }
-                    else
-                    {
-                        int emptyIndex = GetEmptySlotIndex();
-                        if (emptyIndex >= 0)
+                        if (exist != null)
                         {
-                            items[emptyIndex] = item;
+                            exist.amount += item.amount;
                         }
+                        else
+                        {
+                            int emptyIndex = GetEmptySlotIndex();
+                            if (emptyIndex >= 0)
+                            {
+                                items[emptyIndex] = item;
+                            }
+                        }
+                        break;
                     }
-                    break;
-                }
             }
-        
+
         }
         else
         {
@@ -143,14 +144,14 @@ public sealed class BackpackManager
         AddItem(new Item() { id = id, amount = amount });
     }
 
-    public void RemoveItem(int id, int amount)
+    private void _RemoveItem(int id, int amount)
     {
-        Item toRemove = null;
-        int i = -1;              
+        int i = -1;
         int removed = 0;
         while (++i < items.Length)
         {
             Item item = items[i];
+            if (item == null) { continue; }
             if (item.id == id)
             {
                 // 计算当前还有多少需要移除
@@ -176,7 +177,7 @@ public sealed class BackpackManager
             Debug.Log("背包中物品不足");
         }
 
-        if (toRemove == null)
+        if (removed == 0)
         {
             Debug.Log($"背包中不存在{id}的物品");
         }
@@ -184,7 +185,39 @@ public sealed class BackpackManager
 
     public void RemoveItem(Item item)
     {
-        RemoveItem(item.id, item.amount);
+        int i = -1;
+        while (++i < ITEM_SLOT_CTN)
+        {
+            if (items[i] == item)
+            {
+                items[i] = null;
+                break;
+            }
+        }
+    }
+
+
+    public void RemoveItem(Item item, int amount)
+    {
+        int i = -1;
+        int differ = 0;
+        while (++i < ITEM_SLOT_CTN)
+        {
+            if (items[i] == item)
+            {
+                items[i].amount -= amount;
+                if (items[i].amount <= 0)
+                {
+                    differ = -items[i].amount;
+                    items[i] = null;
+                }
+                break;
+            }
+        }
+        if (differ > 0)
+        {
+            _RemoveItem(item.id, differ);
+        }
     }
 
     /// <summary>
@@ -199,7 +232,7 @@ public sealed class BackpackManager
 
     public int GetEmptySlotIndex()
     {
-        
+
         int emptyIndex = -1;
         for (int i = 0; i < items.Length; ++i)
         {
@@ -212,14 +245,69 @@ public sealed class BackpackManager
         return emptyIndex;
     }
 
-    public Item SpitItem(Item item)
+    public int GetItemTotalCount(int id)
     {
-        return default;
+        int count = 0;
+        int i = -1;
+        while (++i < ITEM_SLOT_CTN)
+        {
+            if (items[i] != null && items[i].id == id)
+            {
+                count += items[i].amount;
+            }
+        }
+        return count;
+    }
+
+    public Item SplitItem(Item item)
+    {
+        int emptyIndex = GetEmptySlotIndex();
+        if (emptyIndex < 0)
+        {
+            Debug.Log("当前没有空格子");
+        }
+        if (item.amount == 1)
+        {
+            Debug.Log("数量为1的item不能拆分");
+            return null;
+        }
+
+        Item splitItem = new Item() { id = item.id, amount = item.amount / 2 };
+        item.amount -= splitItem.amount;
+        AddItem(splitItem);
+        Debug.Log("执行结束");      
+        return splitItem;
+       
     }
 
     public bool UseItem(int id, int amount)
     {
-        return default;
+        ItemData cfg = GetCfg(id);
+        if (cfg != null && cfg.type == ItemData.ItemType.Normal)
+        {
+            int useCtn = 0;
+            int i = -1;
+            while (++i < ITEM_SLOT_CTN)
+            {
+                if (items[i] != null && items[i].id == id)
+                {
+                    if (id == 1001)
+                    {
+                        player.ChangeHp(cfg.hp);
+                    }
+                    else if (id == 1002)
+                    {
+                        player.ChangeMp(cfg.mp);
+                    }
+                    RemoveItem(items[i], 1);
+                    if (++useCtn == amount)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     public ItemData GetCfg(int id)
@@ -229,5 +317,23 @@ public sealed class BackpackManager
             return cfg;
         }
         return null;
+    }
+
+    public string ItemInfo(int index)
+    {
+        Item item = GetItemByIndex(index);
+        if (item != null)
+        {
+            ItemData cfg = GetCfg(item.id);
+            if (cfg != null)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.AppendFormat("ID: {0}, Amount: {1}", item.id, item.amount);
+                sb.AppendLine(string.Format("Des: {0}", cfg.description));
+                return sb.ToString();
+            }
+        }
+
+        return "当前未选择item";
     }
 }

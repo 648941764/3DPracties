@@ -4,7 +4,7 @@ public class Player
 {
     public int
         hp, mp, maxHp, maxMp;
-    
+
     public Player(int maxHp, int maxMp)
     {
         hp = maxHp;

@@ -2,15 +2,22 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using static UnityEditor.Progress;
 
 public class Backpack : MonoBehaviour
 {
+    private bool isSwapping;
+    private float swapDuration = 0.5f;
+    private Vector2 startPosition;
+    private Vector2 targetPosition;
+    private float swapStartTime;
+
     [SerializeField] RectTransform slotPrefab;
     [SerializeField] RectTransform itemPrefab;
     [SerializeField] RectTransform dragLayer;
     [SerializeField] Text infoText;
 
-    [SerializeField] Image hp, mp;
+    [SerializeField] Image hp, mp,hpBuffer,mpBuffer;
 
     Dictionary<RectTransform, Image> itemSprites = new Dictionary<RectTransform, Image>();
     Dictionary<RectTransform, Text> itemAmounts = new Dictionary<RectTransform, Text>();
@@ -26,7 +33,7 @@ public class Backpack : MonoBehaviour
 
     Player p;
 
-    private void Awake() 
+    private void Awake()
     {
         p = new Player(300, 200);
         BackpackManager.Instance.player = p;
@@ -46,8 +53,11 @@ public class Backpack : MonoBehaviour
         dragItem.gameObject.SetActive(false);
     }
 
-    private void Update() 
+    private void Update()
     {
+        hpBuffer.fillAmount = Mathf.Lerp(hpBuffer.fillAmount, hp.fillAmount, 2.5f * Time.deltaTime);
+        mpBuffer.fillAmount = Mathf.Lerp(mpBuffer.fillAmount, mp.fillAmount, 2.5f * Time.deltaTime);
+
         if (Input.GetKeyDown(KeyCode.A))
         {
             int itemId = Random.Range(1001, 1006);
@@ -56,13 +66,36 @@ public class Backpack : MonoBehaviour
             Debug.Log($"向背包添加id = {itemId}, amount = {amount}");
             ShowAll();
         }
-        
+
         if (Input.GetKeyDown(KeyCode.D))
         {
             ShowAll();
         }
 
-        
+        if (Input.GetMouseButtonDown(1))
+        {
+            Vector2 mousePos = Input.mousePosition;
+
+            for (int i = 0; i < itemSlots.Length; i++)
+            {
+                RectTransform rect = itemSlots[i];
+                if (RectTransformUtility.RectangleContainsScreenPoint(rect, mousePos))
+                {
+                    Item item = BackpackManager.Instance.GetItemByIndex(i);
+                    if (item != null)
+                    {
+                        Item splitItem = BackpackManager.Instance.SplitItem(item);
+                        if (splitItem != null)
+                        {
+                            ShowItem(i);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+
         if (Input.GetKeyDown(KeyCode.B))
         {
             p.ChangeHp(-Random.Range(1, 51));
@@ -142,7 +175,7 @@ public class Backpack : MonoBehaviour
         else if (Input.GetMouseButtonUp(0))
         {
             if (beginDrag)
-            {
+            {  
                 Vector2 mousePos = Input.mousePosition;
                 beginDrag = false;
                 dragItem.gameObject.SetActive(false);
@@ -162,12 +195,13 @@ public class Backpack : MonoBehaviour
                         if (Vector2.Distance(rect.localPosition, localPoint) <= Vector2.Distance(itemSlots[nearest].localPosition, localPoint))
                         {
                             nearest = i;
-                        }            
+                        }
                     }
-                    
+
                     BackpackManager.Instance.SwapItem(clickIndex, nearest);
                     ShowItem(clickIndex);
                     ShowItem(nearest);
+
                 }
                 clickIndex = -1;
             }
@@ -207,7 +241,7 @@ public class Backpack : MonoBehaviour
             itemAmounts[itemUI].text = item.amount.ToString();
         }
     }
-    
+
     private Sprite GetItemSprite(string icon)
     {
         return Resources.Load<Sprite>("Images/Icon/" + icon);
@@ -228,7 +262,10 @@ public class Backpack : MonoBehaviour
 
     private void UpdatePlayerInfo()
     {
-        hp.fillAmount = (float)p.hp / p.maxHp;
-        mp.fillAmount = (float)p.mp / p.maxMp;
+        float targetHp = (float)p.hp / p.maxHp;
+        float targetMp = (float)p.mp / p.maxMp;
+
+        hp.fillAmount = targetMp;
+        mp.fillAmount = targetMp;
     }
 }
