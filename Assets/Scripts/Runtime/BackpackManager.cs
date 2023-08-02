@@ -1,7 +1,10 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.tvOS;
 
 public class Item
 {
@@ -23,6 +26,9 @@ public sealed class BackpackManager
     }
 
     private Item[] items;
+
+    private bool isChange;
+
     Dictionary<int, ItemData> itemCfg;
 
     private BackpackManager()
@@ -76,6 +82,7 @@ public sealed class BackpackManager
 
     public void AddItem(Item item)
     {
+
         ItemData cfg = GetCfg(item.id);
         if (cfg != null)
         {
@@ -265,6 +272,7 @@ public sealed class BackpackManager
         if (emptyIndex < 0)
         {
             Debug.Log("当前没有空格子");
+            return null;
         }
         if (item.amount == 1)
         {
@@ -274,10 +282,118 @@ public sealed class BackpackManager
 
         Item splitItem = new Item() { id = item.id, amount = item.amount / 2 };
         item.amount -= splitItem.amount;
-        AddItem(splitItem);
+        items[emptyIndex] = splitItem;
         Debug.Log("执行结束");      
         return splitItem;
        
+    }
+
+    public void DeletAll()
+    {
+        int i = -1;
+        while (++i < ITEM_SLOT_CTN)
+        {
+            if (items[i] != null)
+            {
+                RemoveItem(items[i]);
+            }
+        }
+    }   
+
+    public void TidyItem()
+    {
+        int i = -1;
+        while (++i < ITEM_SLOT_CTN)
+        {
+            Item currentItem = items[i];
+            if (currentItem != null)
+            {
+                int k = -1;
+                while (++k < i)
+                {
+                    if (items[k] == null)
+                    {
+                        items[k] = items[i];
+                        items[i] = null;
+                        break;
+                    }
+                    else if (items[k] != null)
+                    {
+                        if (items[k].id == items[i].id && GetCfg(items[i].id).type == ItemData.ItemType.Normal)
+                        {
+                            items[k].amount += items[i].amount;
+                            items[i] = null;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void MergeItem(Item currentItem, int index)
+    {
+        ItemData cfg = GetCfg(currentItem.id);
+        if (index < 0 || index >= ITEM_SLOT_CTN || currentItem == null)
+        {
+            return;
+        }
+
+        if (items[index] == null)
+        {
+            //把当前currenitem放到items[index]里
+            items[index] = currentItem;
+        }
+        else if (currentItem.id == items[index].id && cfg.type == ItemData.ItemType.Normal)
+        {
+            items[index].amount += currentItem.amount;
+        }
+        RemoveItem(currentItem);
+    }
+    
+    public void UseItem(Item item, int amount)
+    {
+        ItemData cfg = GetCfg(item.id);
+        if (cfg.type != ItemData.ItemType.Normal)
+        {
+            return;
+        }
+        int differ = item.amount - amount;
+        if (differ <= 0)
+        {
+            for (int i = 0; i < item.amount; ++i)
+            {
+                if (item.id == 1001)
+                {
+                    player.ChangeHp(cfg.hp);
+                }
+                else if (item.id == 1002)
+                {
+                    player.ChangeMp(cfg.mp);
+                }
+            }
+            if (differ < 0 && cfg.type == ItemData.ItemType.Normal)
+            {
+                UseItem(item.id, -differ);
+            }
+            RemoveItem(item);
+        }
+        else
+        {
+            item.amount = differ;
+            for (int i = 0; i < amount; ++i)
+            {
+                if (item.id == 1001)
+                {
+                    player.ChangeHp(cfg.hp);
+                }
+                else if (item.id == 1002)
+                {
+                    player.ChangeMp(cfg.mp);
+                }
+            }
+        }
+
     }
 
     public bool UseItem(int id, int amount)
@@ -329,7 +445,7 @@ public sealed class BackpackManager
             {
                 StringBuilder sb = new StringBuilder();
                 sb.AppendFormat("ID: {0}, Amount: {1}", item.id, item.amount);
-                sb.AppendLine(string.Format("Des: {0}", cfg.description));
+                sb.AppendLine(string.Format("\nDes: {0}", cfg.description));
                 return sb.ToString();
             }
         }

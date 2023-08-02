@@ -6,18 +6,22 @@ using static UnityEditor.Progress;
 
 public class Backpack : MonoBehaviour
 {
-    private bool isSwapping;
-    private float swapDuration = 0.5f;
-    private Vector2 startPosition;
-    private Vector2 targetPosition;
-    private float swapStartTime;
+
+    bool isChangePlayerNature;
+    enum BtnType { None = -1, Tidy, MinusHP, MinusMp, Clear, Count }
+
+    private static string[] btnText = new string[]
+    {
+        "整理", "-HP", "-MP", "清空"
+    };
+    [SerializeField] Transform btnParent;
 
     [SerializeField] RectTransform slotPrefab;
     [SerializeField] RectTransform itemPrefab;
     [SerializeField] RectTransform dragLayer;
     [SerializeField] Text infoText;
 
-    [SerializeField] Image hp, mp, hpBuffer, mpBuffer;
+    [SerializeField] Image hp, mp;
 
     Dictionary<RectTransform, Image> itemSprites = new Dictionary<RectTransform, Image>();
     Dictionary<RectTransform, Text> itemAmounts = new Dictionary<RectTransform, Text>();
@@ -35,6 +39,14 @@ public class Backpack : MonoBehaviour
 
     private void Awake()
     {
+        Button btnPrefab = Resources.Load<Button>("CommonBtn");
+        BtnType btnType = BtnType.None;
+        while (++btnType < BtnType.Count)
+        {
+            Button btn = Instantiate(btnPrefab, btnParent);
+            btn.GetComponentInChildren<Text>().text = btnText[(int)btnType];
+            btn.onClick.AddListener(GetBtnAction(btnType));
+        }
         p = new Player(300, 200);
         BackpackManager.Instance.player = p;
         UpdatePlayerInfo();
@@ -55,9 +67,7 @@ public class Backpack : MonoBehaviour
 
     private void Update()
     {
-        hpBuffer.fillAmount = Mathf.Lerp(hpBuffer.fillAmount, hp.fillAmount, 2.5f * Time.deltaTime);
-        mpBuffer.fillAmount = Mathf.Lerp(mpBuffer.fillAmount, mp.fillAmount, 2.5f * Time.deltaTime);
-
+        UpdatePlayerInfo();
         if (Input.GetKeyDown(KeyCode.A))
         {
             int itemId = Random.Range(1001, 1006);
@@ -66,6 +76,7 @@ public class Backpack : MonoBehaviour
             BackpackManager.Instance.AddItem(itemId, amount);
             Debug.Log($"向背包添加id = {itemId}, amount = {amount}");
             ShowAll();
+            
         }
 
         if (Input.GetKeyDown(KeyCode.D))
@@ -86,23 +97,13 @@ public class Backpack : MonoBehaviour
                     if (item != null)
                     {
                         Item splitItem = BackpackManager.Instance.SplitItem(item);
-                        if (splitItem != null)
-                        {
-                            ShowItem(i);
-                        }
+                        ShowAll();
                     }
                     break;
                 }
             }
         }
 
-
-        if (Input.GetKeyDown(KeyCode.B))
-        {
-            p.ChangeHp(-Random.Range(1, 51));
-            p.ChangeMp(-Random.Range(1, 31));
-            UpdatePlayerInfo();
-        }
 
         if (Input.GetMouseButtonDown(0))
         {
@@ -118,16 +119,18 @@ public class Backpack : MonoBehaviour
                         if (item != null)
                         {
                             int amount = BackpackManager.Instance.GetItemTotalCount(item.id);
-                            BackpackManager.Instance.UseItem(item.id, Random.Range(1, amount + 1));
+                            int useCount = Random.Range(1, amount + 1);
+                            BackpackManager.Instance.UseItem(item, useCount);
+                            Debug.LogFormat("当前使用了{0}个", useCount);
                             UpdatePlayerInfo();
-                            ShowItem(i);
+                            ShowAll();
                         }
                     }
                     else
                     {
                         clickIndex = i;
-                        infoText.text = BackpackManager.Instance.ItemInfo(i);
                     }
+                    infoText.text = BackpackManager.Instance.ItemInfo(i);
                 }
             }
 
@@ -198,8 +201,28 @@ public class Backpack : MonoBehaviour
                             nearest = i;
                         }
                     }
+                    Item currentItem = BackpackManager.Instance.GetItemByIndex(clickIndex);
 
-                    BackpackManager.Instance.SwapItem(clickIndex, nearest);
+                    
+                    Item item = BackpackManager.Instance.GetItemByIndex(nearest);
+                    ItemData cfg = BackpackManager.Instance.GetCfg(currentItem.id);
+                    if (item != null)
+                    {
+                        if (item.id == currentItem.id && cfg.type == ItemData.ItemType.Normal)
+                        {
+                            BackpackManager.Instance.MergeItem(currentItem, nearest);
+                            //BackpackManager.Instance.RemoveItem(currentItem);
+                        }
+                        else
+                        {
+                            BackpackManager.Instance.SwapItem(clickIndex, nearest);
+                        }
+                    }
+                    else
+                    {
+                         BackpackManager.Instance.SwapItem(clickIndex, nearest);
+                    }
+                    
                     ShowItem(clickIndex);
                     ShowItem(nearest);
 
@@ -254,19 +277,61 @@ public class Backpack : MonoBehaviour
         while (++i < BackpackManager.ITEM_SLOT_CTN)
         {
             Item item = BackpackManager.Instance.GetItemByIndex(i);
-            if (item != null)
-            {
-                ShowItem(i);
-            }
+            ShowItem(i);
         }
     }
+
 
     private void UpdatePlayerInfo()
     {
         float targetHp = (float)p.hp / p.maxHp;
         float targetMp = (float)p.mp / p.maxMp;
+        hp.fillAmount = Mathf.Lerp(hp.fillAmount, targetHp, 3 * Time.deltaTime);
+        mp.fillAmount = Mathf.Lerp(mp.fillAmount, targetMp, 3 * Time.deltaTime); 
+    }
 
-        hp.fillAmount = targetMp;
-        mp.fillAmount = targetMp;
+    private UnityEngine.Events.UnityAction GetBtnAction(BtnType type)
+    {
+        UnityEngine.Events.UnityAction action = () => Debug.Log("未添加事件");
+        switch (type)
+        {
+            case BtnType.Tidy:
+                action = OnTidyBtnClicked;
+                break;
+            case BtnType.MinusHP:
+                action = OnReduceHpBtnClicked;
+                break;
+            case BtnType.MinusMp:
+                action = OnReduceMpBtnClicked;
+                break;
+            case BtnType.Clear:
+                action = OnClearBtnClick;
+                break;
+        }
+        return action;
+    }
+
+    private void OnReduceHpBtnClicked()
+    {
+        p.ChangeHp(-Random.Range(1, 51));
+        UpdatePlayerInfo();
+    }
+
+    private void OnReduceMpBtnClicked()
+    {
+        p.ChangeMp(-Random.Range(1, 51));
+        UpdatePlayerInfo();
+    }
+
+    private void OnTidyBtnClicked()
+    {
+        BackpackManager.Instance.TidyItem();
+        ShowAll();
+    }
+
+    private void OnClearBtnClick()
+    {
+        BackpackManager.Instance.DeletAll();
+        ShowAll();
     }
 }
