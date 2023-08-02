@@ -22,6 +22,7 @@ public class Backpack : MonoBehaviour
     [SerializeField] Text infoText;
 
     [SerializeField] Image hp, mp;
+    [SerializeField] Text hpTxt, mpTxt;
 
     Dictionary<RectTransform, Image> itemSprites = new Dictionary<RectTransform, Image>();
     Dictionary<RectTransform, Text> itemAmounts = new Dictionary<RectTransform, Text>();
@@ -37,6 +38,10 @@ public class Backpack : MonoBehaviour
 
     Player p;
 
+    [Range(0.2f, 0.75f)]public float time = 0.75f;
+    int currentHP, currentMP;
+    float hpTimer, mpTimer;
+
     private void Awake()
     {
         Button btnPrefab = Resources.Load<Button>("CommonBtn");
@@ -49,7 +54,6 @@ public class Backpack : MonoBehaviour
         }
         p = new Player(300, 200);
         BackpackManager.Instance.player = p;
-        UpdatePlayerInfo();
         infoText.text = "";
         itemUIs = new RectTransform[BackpackManager.ITEM_SLOT_CTN];
         itemSlots = new RectTransform[BackpackManager.ITEM_SLOT_CTN];
@@ -67,7 +71,6 @@ public class Backpack : MonoBehaviour
 
     private void Update()
     {
-        UpdatePlayerInfo();
         if (Input.GetKeyDown(KeyCode.A))
         {
             int itemId = Random.Range(1001, 1006);
@@ -122,7 +125,6 @@ public class Backpack : MonoBehaviour
                             int useCount = Random.Range(1, amount + 1);
                             BackpackManager.Instance.UseItem(item, useCount);
                             Debug.LogFormat("当前使用了{0}个", useCount);
-                            UpdatePlayerInfo();
                             ShowAll();
                         }
                     }
@@ -229,8 +231,12 @@ public class Backpack : MonoBehaviour
                 }
                 clickIndex = -1;
             }
-
         }
+    }
+
+    void LateUpdate() 
+    {
+        UpdatePlayerUI();
     }
 
     private RectTransform CreateItemUI(int index)
@@ -281,13 +287,33 @@ public class Backpack : MonoBehaviour
         }
     }
 
-
-    private void UpdatePlayerInfo()
+    void UpdatePlayerUI()
     {
-        float targetHp = (float)p.hp / p.maxHp;
-        float targetMp = (float)p.mp / p.maxMp;
-        hp.fillAmount = Mathf.Lerp(hp.fillAmount, targetHp, 3 * Time.deltaTime);
-        mp.fillAmount = Mathf.Lerp(mp.fillAmount, targetMp, 3 * Time.deltaTime); 
+        if (currentHP != p.hp)
+        {
+            hpTimer += Time.deltaTime;
+            float current = Mathf.Lerp(currentHP, p.hp, hpTimer / time);
+            hp.fillAmount = current / p.maxHp;
+            hpTxt.text = $"{(int)current} / {p.maxHp}";
+            if (hpTimer >= time)
+            {
+                currentHP = p.hp;
+                hpTimer = 0f;
+            }
+        }
+        
+        if (currentMP != p.mp)
+        {
+            mpTimer += Time.deltaTime;
+            float current = Mathf.Lerp(currentMP, p.mp, mpTimer / time);
+            mp.fillAmount = current / p.maxMp;
+            mpTxt.text = $"{(int)current} / {p.maxMp}";
+            if (mpTimer >= time)
+            {
+                currentMP = p.mp;
+                mpTimer = 0f;
+            }
+        }
     }
 
     private UnityEngine.Events.UnityAction GetBtnAction(BtnType type)
@@ -314,13 +340,11 @@ public class Backpack : MonoBehaviour
     private void OnReduceHpBtnClicked()
     {
         p.ChangeHp(-Random.Range(1, 51));
-        UpdatePlayerInfo();
     }
 
     private void OnReduceMpBtnClicked()
     {
         p.ChangeMp(-Random.Range(1, 51));
-        UpdatePlayerInfo();
     }
 
     private void OnTidyBtnClicked()
