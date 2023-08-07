@@ -387,19 +387,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 321516917}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3e235ec822fd315469368d2aa212d51e, type: 3}
+  m_Script: {fileID: 11500000, guid: 6c0ac67bee1da1140a65328c56cc0bb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  btnParent: {fileID: 345238466}
+  dragLayer: {fileID: 2043778314}
   slotPrefab: {fileID: 2186889189323674572, guid: 1c2192082bff4df4dad2c43f904f4ed9, type: 3}
   itemPrefab: {fileID: 1659646535884993722, guid: 6f90d4fbb2bf7224b824686b57d94e57, type: 3}
-  dragLayer: {fileID: 2043778314}
   infoText: {fileID: 1142305574}
-  hp: {fileID: 314237836}
-  mp: {fileID: 1258948511}
-  hpTxt: {fileID: 308126890}
-  mpTxt: {fileID: 1004801321}
-  time: 0.407
 --- !u!1 &345238465
 GameObject:
   m_ObjectHideFlags: 0
@@ -1225,7 +1219,7 @@ GameObject:
   - component: {fileID: 1518286869}
   - component: {fileID: 1518286868}
   m_Layer: 5
-  m_Name: Image
+  m_Name: InfoText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

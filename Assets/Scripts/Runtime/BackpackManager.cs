@@ -282,8 +282,7 @@ public sealed class BackpackManager
 
         Item splitItem = new Item() { id = item.id, amount = item.amount / 2 };
         item.amount -= splitItem.amount;
-        items[emptyIndex] = splitItem;
-        Debug.Log("执行结束");      
+        items[emptyIndex] = splitItem;     
         return splitItem;
        
     }
@@ -325,6 +324,89 @@ public sealed class BackpackManager
                             items[i] = null;
                             break;
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    public void SortItme()
+    {
+        int i = -1;
+        while (++i < ITEM_SLOT_CTN)
+        {
+            Item current = items[i];
+            if (current != null && GetCfg(items[i].id).type == ItemData.ItemType.Equipment)
+            {
+                ItemData cfg = GetCfg(items[i].id);
+                int k = -1;
+                while (++k < i)
+                {
+                    if (items[k] == null)
+                    {
+                        items[k] = items[i];
+                        items[i] = null;
+                    }
+                    else if (items[k] != null && GetCfg(items[k].id).type == ItemData.ItemType.Normal)
+                    {
+                        SwapItem(i, k);
+                    }
+                }
+            }
+        }
+
+        int j = ITEM_SLOT_CTN;
+        while (--j > -1)
+        {
+            Item current = items[j];
+            if (items[j] != null && GetCfg(items[j].id).type == ItemData.ItemType.Equipment)
+            {
+                int currentItem = -1;
+                while (++currentItem < j)
+                {
+                    if (items[j].id < items[currentItem].id)
+                    {
+                        SwapItem(j, currentItem);
+                    }
+                }
+            }
+        }
+
+        //虽然装备格子已经配好了，但是如果消耗品前面还有空格子的话，就用下面这段代码来让他移动到空的位置
+        int m = -1;
+        while (++m < ITEM_SLOT_CTN)
+        {
+            if (items[m] == null)
+            {
+                int current = m;
+                while (++current < ITEM_SLOT_CTN)
+                {
+                    if (items[current] != null)
+                    {
+                        items[m] = items[current];
+                        items[current] = null;
+                        break;
+                    }
+                }
+            }
+        }
+
+        int MaxItemCount = -1;
+        while (++MaxItemCount < ITEM_SLOT_CTN)//从头开始遍历
+        {
+            if (items[MaxItemCount] != null && GetCfg(items[MaxItemCount].id).type == ItemData.ItemType.Normal)//找到第一个不为空的普通物品
+            {
+                int k = ITEM_SLOT_CTN;
+                while (--k > MaxItemCount)
+                {
+                    if (items[k] != null && items[k].id == items[MaxItemCount].id)
+                    {
+                        items[MaxItemCount].amount += items[k].amount;
+                        items[k] = null;
+                    }
+                    else if (items[k] != null && items[k].id < items[MaxItemCount].id)
+                    {
+                        SwapItem(MaxItemCount, k);
                     }
                 }
             }
@@ -449,7 +531,6 @@ public sealed class BackpackManager
                 return sb.ToString();
             }
         }
-
-        return "当前未选择item";
+         return "当前未选择item";
     }
 }

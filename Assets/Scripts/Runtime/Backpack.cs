@@ -1,24 +1,24 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using static UnityEditor.Progress;
 
-public class Backpack : MonoBehaviour
+public class Backpack : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHandler
 {
 
     bool isChangePlayerNature;
-    enum BtnType { None = -1, Tidy, MinusHP, MinusMp, Clear, Count }
+    enum BtnType { None = -1, Tidy, MinusHP, MinusMp, Clear, Sort, Count}
 
     private static string[] btnText = new string[]
     {
-        "整理", "-HP", "-MP", "清空"
+        "整理", "-HP", "-MP", "清空", "排序"
     };
     [SerializeField] Transform btnParent;
-
+    [SerializeField] RectTransform dragLayer;
     [SerializeField] RectTransform slotPrefab;
     [SerializeField] RectTransform itemPrefab;
-    [SerializeField] RectTransform dragLayer;
     [SerializeField] Text infoText;
 
     [SerializeField] Image hp, mp;
@@ -90,7 +90,6 @@ public class Backpack : MonoBehaviour
         if (Input.GetMouseButtonDown(1))
         {
             Vector2 mousePos = Input.mousePosition;
-
             for (int i = 0; i < itemSlots.Length; i++)
             {
                 RectTransform rect = itemSlots[i];
@@ -99,7 +98,7 @@ public class Backpack : MonoBehaviour
                     Item item = BackpackManager.Instance.GetItemByIndex(i);
                     if (item != null)
                     {
-                        Item splitItem = BackpackManager.Instance.SplitItem(item);
+                        Item splitItem = BackpackManager.Instance.SplitItem (item);
                         ShowAll();
                     }
                     break;
@@ -133,6 +132,7 @@ public class Backpack : MonoBehaviour
                         clickIndex = i;
                     }
                     infoText.text = BackpackManager.Instance.ItemInfo(i);
+                    break;
                 }
             }
 
@@ -150,88 +150,87 @@ public class Backpack : MonoBehaviour
                 }
             }
         }
-        else if (canDrag && Input.GetMouseButton(0))
-        {
+        //else if (canDrag && Input.GetMouseButton(0))
+        //{
 
-            Vector2 mousePos = Input.mousePosition;
-            if (!beginDrag)
-            {
-                if (mousePos == lastMousePos)
-                {
-                    return;
-                }
-                beginDrag = true;
-                ItemData cfg = BackpackManager.Instance.GetCfg(BackpackManager.Instance.GetItemByIndex(clickIndex).id);
-                dragItem.GetComponent<Image>().sprite = GetItemSprite(cfg.icon);
-                RectTransform itemUI = itemUIs[clickIndex];
-                itemUI.gameObject.SetActive(false);
-                dragItem.gameObject.SetActive(true);
-                dragItem.position = itemUI.position;
-                // Vector3 screenPos = RectTransformUtility.WorldToScreenPoint(Camera.main, itemUI.position);
-                // RectTransformUtility.ScreenPointToLocalPointInRectangle(dragLayer, screenPos, Camera.main, out Vector2 localPoint);
-                // dragItem.localPosition = localPoint;  
-            }
+        //    Vector2 mousePos = Input.mousePosition;
+        //    if (!beginDrag)
+        //    {
+        //        if (mousePos == lastMousePos)
+        //        {
+        //            return;
+        //        }
+        //        beginDrag = true;
+        //        ItemData cfg = BackpackManager.Instance.GetCfg(BackpackManager.Instance.GetItemByIndex(clickIndex).id);
+        //        dragItem.GetComponent<Image>().sprite = GetItemSprite(cfg.icon);
+        //        RectTransform itemUI = itemUIs[clickIndex];
+        //        itemUI.gameObject.SetActive(false);
+        //        dragItem.gameObject.SetActive(true);
+        //        dragItem.position = itemUI.position;
+        //        // Vector3 screenPos = RectTransformUtility.WorldToScreenPoint(Camera.main, itemUI.position);
+        //        // RectTransformUtility.ScreenPointToLocalPointInRectangle(dragLayer, screenPos, Camera.main, out Vector2 localPoint);
+        //        // dragItem.localPosition = localPoint;  
+        //    }
 
-            Vector2 deltaPos = mousePos - lastMousePos;
-            Vector3 pos = dragItem.position;
-            pos += (Vector3)deltaPos;
-            dragItem.position = pos;
-            lastMousePos = mousePos;
-        }
-        else if (Input.GetMouseButtonUp(0))
-        {
-            if (beginDrag)
-            {  
-                Vector2 mousePos = Input.mousePosition;
-                beginDrag = false;
-                dragItem.gameObject.SetActive(false);
-                if (!RectTransformUtility.RectangleContainsScreenPoint(transform as RectTransform, mousePos))
-                {
-                    BackpackManager.Instance.RemoveItem(BackpackManager.Instance.GetItemByIndex(clickIndex));
-                    ShowItem(clickIndex);
-                }
-                else
-                {
-                    RectTransformUtility.ScreenPointToLocalPointInRectangle(transform as RectTransform, mousePos, null, out Vector2 localPoint);
-                    Debug.Log(localPoint);
-                    int nearest = 0;
-                    for (int i = 1; i < itemSlots.Length; ++i)
-                    {
-                        RectTransform rect = itemSlots[i];
-                        if (Vector2.Distance(rect.localPosition, localPoint) <= Vector2.Distance(itemSlots[nearest].localPosition, localPoint))
-                        {
-                            nearest = i;
-                        }
-                    }
-                    Item currentItem = BackpackManager.Instance.GetItemByIndex(clickIndex);
+        //    Vector2 deltaPos = mousePos - lastMousePos;
+        //    Vector3 pos = dragItem.position;
+        //    pos += (Vector3)deltaPos;
+        //    dragItem.position = pos;
+        //    lastMousePos = mousePos;
+        //}
+        //else if (Input.GetMouseButtonUp(0))
+        //{
+        //    if (beginDrag)
+        //    {  
+        //        Vector2 mousePos = Input.mousePosition;
+        //        beginDrag = false;
+        //        dragItem.gameObject.SetActive(false);
+        //        if (!RectTransformUtility.RectangleContainsScreenPoint(transform as RectTransform, mousePos))
+        //        {
+        //            BackpackManager.Instance.RemoveItem(BackpackManager.Instance.GetItemByIndex(clickIndex));
+        //            ShowItem(clickIndex);
+        //        }
+        //        else
+        //        {
+        //            RectTransformUtility.ScreenPointToLocalPointInRectangle(transform as RectTransform, mousePos, null, out Vector2 localPoint);
+        //            Debug.Log(localPoint);
+        //            int nearest = 0;
+        //            for (int i = 1; i < itemSlots.Length; ++i)
+        //            {
+        //                RectTransform rect = itemSlots[i];
+        //                if (Vector2.Distance(rect.localPosition, localPoint) <= Vector2.Distance(itemSlots[nearest].localPosition, localPoint))
+        //                {
+        //                    nearest = i;
+        //                }
+        //            }
+        //            Item currentItem = BackpackManager.Instance.GetItemByIndex(clickIndex);
 
+        //            Item item = BackpackManager.Instance.GetItemByIndex(nearest);
+        //            ItemData cfg = BackpackManager.Instance.GetCfg(currentItem.id);
+        //            if (item != null)
+        //            {
+        //                if (item.id == currentItem.id && cfg.type == ItemData.ItemType.Normal)
+        //                {
+        //                    BackpackManager.Instance.MergeItem(currentItem, nearest);
+        //                    //BackpackManager.Instance.RemoveItem(currentItem);
+        //                }
+        //                else
+        //                {
+        //                    BackpackManager.Instance.SwapItem(clickIndex, nearest);
+        //                }
+        //            }
+        //            else
+        //            {
+        //                 BackpackManager.Instance.SwapItem(clickIndex, nearest);
+        //            }
                     
-                    Item item = BackpackManager.Instance.GetItemByIndex(nearest);
-                    ItemData cfg = BackpackManager.Instance.GetCfg(currentItem.id);
-                    if (item != null)
-                    {
-                        if (item.id == currentItem.id && cfg.type == ItemData.ItemType.Normal)
-                        {
-                            BackpackManager.Instance.MergeItem(currentItem, nearest);
-                            //BackpackManager.Instance.RemoveItem(currentItem);
-                        }
-                        else
-                        {
-                            BackpackManager.Instance.SwapItem(clickIndex, nearest);
-                        }
-                    }
-                    else
-                    {
-                         BackpackManager.Instance.SwapItem(clickIndex, nearest);
-                    }
-                    
-                    ShowItem(clickIndex);
-                    ShowItem(nearest);
+        //            ShowItem(clickIndex);
+        //            ShowItem(nearest);
 
-                }
-                clickIndex = -1;
-            }
-        }
+        //        }
+        //        clickIndex = -1;
+        //    }
+        //}
     }
 
     void LateUpdate() 
@@ -295,10 +294,10 @@ public class Backpack : MonoBehaviour
             float current = Mathf.Lerp(currentHP, p.hp, hpTimer / time);
             hp.fillAmount = current / p.maxHp;
             hpTxt.text = $"{(int)current} / {p.maxHp}";
-            if (hpTimer >= time)
+            if (hpTimer > time)
             {
                 currentHP = p.hp;
-                hpTimer = 0f;
+                hpTimer = 0;
             }
         }
         
@@ -333,6 +332,9 @@ public class Backpack : MonoBehaviour
             case BtnType.Clear:
                 action = OnClearBtnClick;
                 break;
+            case BtnType.Sort:
+                action = OnSortBtnClick;
+                break;
         }
         return action;
     }
@@ -357,5 +359,99 @@ public class Backpack : MonoBehaviour
     {
         BackpackManager.Instance.DeletAll();
         ShowAll();
+    }
+
+   private void OnSortBtnClick()
+    {
+        BackpackManager.Instance.SortItme();
+        ShowAll();
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        if (canDrag && eventData.button == PointerEventData.InputButton.Left)
+        {
+            if (!beginDrag)
+            {
+                beginDrag = true;
+                //获取点击物品的Data，
+                ItemData cfg = BackpackManager.Instance.GetCfg(BackpackManager.Instance.GetItemByIndex(clickIndex).id);
+                //dragItem是我要把要拖拽物品的Data数据里面的图片放到dragItem里面
+                dragItem.GetComponent<Image>().sprite = GetItemSprite(cfg.icon);
+                //这个UI就是我要要拖动的物体
+                RectTransform UI = itemUIs[clickIndex];
+                UI.gameObject.SetActive(false);
+                dragItem.gameObject.SetActive(true);
+                //把要拖物品的位置，等于dragItem的位置
+                dragItem.position = UI.position;
+            }
+        }
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        if (canDrag && beginDrag && eventData.button == PointerEventData.InputButton.Left)
+        {
+            Vector2 mousePosition = eventData.position;//eventdata.positon 就是BeginDrag点击的位置
+            //
+            Vector2 currentPosion = mousePosition - lastMousePos;
+            //拖动中物品的位置
+            Vector3 pos = dragItem.position;
+            pos += (Vector3)currentPosion;
+            dragItem.position = pos;
+            lastMousePos = mousePosition;
+        }
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        if (canDrag && beginDrag && eventData.button == PointerEventData.InputButton.Left)
+        {
+            Vector2 currentPositon = eventData.position;
+            beginDrag = false;
+            dragItem.gameObject.SetActive(false);
+            
+            if (!RectTransformUtility.RectangleContainsScreenPoint(transform as RectTransform, currentPositon))
+            {
+                BackpackManager.Instance.RemoveItem(BackpackManager.Instance.GetItemByIndex(clickIndex));
+                Debug.Log("丢弃");
+                ShowAll();
+            }
+            else
+            {
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(transform as RectTransform, currentPositon, null, out Vector2 localPoint);
+                int nearest = 0;
+                for (int i = 0; i < itemSlots.Length; ++i)
+                {
+                    RectTransform rect = itemSlots[i];
+                    if (Vector2.Distance(rect.localPosition, localPoint) <= Vector2.Distance(itemSlots[nearest].localPosition, localPoint))
+                    {
+                        nearest = i;
+                    }
+                }
+                Item currentItem = BackpackManager.Instance.GetItemByIndex(clickIndex);
+                Item nearestItem = BackpackManager.Instance.GetItemByIndex(nearest);
+                ItemData currentData = BackpackManager.Instance.GetCfg(currentItem.id);
+                if (nearestItem != null )
+                {
+                    if (currentItem.id == nearestItem.id && currentData.type == ItemData.ItemType.Normal)
+                    {
+                        nearestItem.amount += currentItem.amount;
+                        BackpackManager.Instance.RemoveItem(currentItem);
+                    }
+                    else
+                    {
+                        BackpackManager.Instance.SwapItem(clickIndex, nearest);
+                    }
+                }
+                else
+                {
+                    BackpackManager.Instance.SwapItem(clickIndex, nearest);
+                }
+                ShowAll();
+                ShowItem(clickIndex);
+            }
+            clickIndex = -1;
+        }
     }
 }
