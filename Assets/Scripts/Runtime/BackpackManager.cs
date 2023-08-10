@@ -335,10 +335,8 @@ public sealed class BackpackManager
         int i = -1;
         while (++i < ITEM_SLOT_CTN)
         {
-            Item current = items[i];
-            if (current != null && GetCfg(items[i].id).type == ItemData.ItemType.Equipment)
+            if (items[i] != null && GetCfg(items[i].id).type == ItemData.ItemType.Equipment)
             {
-                ItemData cfg = GetCfg(items[i].id);
                 int k = -1;
                 while (++k < i)
                 {
@@ -406,7 +404,26 @@ public sealed class BackpackManager
                     }
                     else if (items[k] != null && items[k].id < items[MaxItemCount].id)
                     {
-                        SwapItem(MaxItemCount, k);
+                        Item temp = items[k];
+                        items[k] = items[MaxItemCount];
+                        items[MaxItemCount] = temp;
+                        //SwapItem(MaxItemCount, k);
+                    }
+                }
+            }
+        }
+
+        int num = -1;
+        while (++num < ITEM_SLOT_CTN)
+        {
+            if (items[num] == null)
+            {
+                int k = num;
+                while (++k < ITEM_SLOT_CTN)
+                {
+                    if (items[k] != null)
+                    {
+                        SwapItem(k, num);
                     }
                 }
             }
