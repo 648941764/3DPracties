@@ -10,6 +10,7 @@ public class ItemManager : MonoBehaviour
     List<ItemData> dataList;
     public static ItemManager instance;
     public static ItemManager Instance()
+
     {
         return instance;
     }
