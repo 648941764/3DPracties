@@ -5,11 +5,11 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using static UnityEditor.Progress;
 
-public class Backpack : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHandler
+public class Backpack : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
 
     bool isChangePlayerNature;
-    enum BtnType { None = -1, Tidy, MinusHP, MinusMp, Clear, Sort, Count}
+    enum BtnType { None = -1, Tidy, MinusHP, MinusMp, Clear, Sort, Count }
 
     private static string[] btnText = new string[]
     {
@@ -38,7 +38,7 @@ public class Backpack : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
 
     Player p;
 
-    [Range(0.2f, 0.75f)]public float time = 0.75f;
+    [Range(0.2f, 0.75f)] public float time = 0.75f;
     int currentHP, currentMP;
     float hpTimer, mpTimer;
 
@@ -79,7 +79,7 @@ public class Backpack : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
             BackpackManager.Instance.AddItem(itemId, amount);
             Debug.Log($"向背包添加id = {itemId}, amount = {amount}");
             ShowAll();
-            
+
         }
 
         if (Input.GetKeyDown(KeyCode.D))
@@ -98,7 +98,7 @@ public class Backpack : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
                     Item item = BackpackManager.Instance.GetItemByIndex(i);
                     if (item != null)
                     {
-                        Item splitItem = BackpackManager.Instance.SplitItem (item);
+                        Item splitItem = BackpackManager.Instance.SplitItem(item);
                         ShowAll();
                     }
                     break;
@@ -223,7 +223,7 @@ public class Backpack : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
         //            {
         //                 BackpackManager.Instance.SwapItem(clickIndex, nearest);
         //            }
-                    
+
         //            ShowItem(clickIndex);
         //            ShowItem(nearest);
 
@@ -233,7 +233,7 @@ public class Backpack : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
         //}
     }
 
-    void LateUpdate() 
+    void LateUpdate()
     {
         UpdatePlayerUI();
     }
@@ -276,7 +276,7 @@ public class Backpack : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
         return Resources.Load<Sprite>("Images/Icon/" + icon);
     }
 
-    private void ShowAll()
+    public void ShowAll()
     {
         int i = -1;
         while (++i < BackpackManager.ITEM_SLOT_CTN)
@@ -300,7 +300,7 @@ public class Backpack : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
                 hpTimer = 0;
             }
         }
-        
+
         if (currentMP != p.mp)
         {
             mpTimer += Time.deltaTime;
@@ -361,11 +361,12 @@ public class Backpack : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
         ShowAll();
     }
 
-   private void OnSortBtnClick()
+    private void OnSortBtnClick()
     {
         BackpackManager.Instance.SortItme();
         ShowAll();
     }
+
 
     public void OnBeginDrag(PointerEventData eventData)
     {
@@ -410,7 +411,7 @@ public class Backpack : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
             Vector2 currentPositon = eventData.position;
             beginDrag = false;
             dragItem.gameObject.SetActive(false);
-            
+
             if (!RectTransformUtility.RectangleContainsScreenPoint(transform as RectTransform, currentPositon))
             {
                 BackpackManager.Instance.RemoveItem(BackpackManager.Instance.GetItemByIndex(clickIndex));
@@ -432,7 +433,7 @@ public class Backpack : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
                 Item currentItem = BackpackManager.Instance.GetItemByIndex(clickIndex);
                 Item nearestItem = BackpackManager.Instance.GetItemByIndex(nearest);
                 ItemData currentData = BackpackManager.Instance.GetCfg(currentItem.id);
-                if (nearestItem != null )
+                if (nearestItem != null)
                 {
                     if (currentItem.id == nearestItem.id && currentData.type == ItemData.ItemType.Normal)
                     {

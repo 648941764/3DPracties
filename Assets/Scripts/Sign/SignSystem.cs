@@ -4,9 +4,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using static DataManager;
 
 public class SignSystem : MonoBehaviour
 {
+    public Backpack backpack;
     private const string previousSignInTime = "PreviousSinInTime";//签到的时间
     private const string signInCount = "signInCount"; //签到的次数
 
@@ -18,15 +20,51 @@ public class SignSystem : MonoBehaviour
     private int _maxSignInCount = 7;//最大签到次数
     private bool _showNextSignInTime; //是否显示下一次签到时间
     private bool _isMaxSignInCount; //是否达到最签到次数
+    private int _signInNum;
 
     public Toggle[] _isSignInToggleTips;//是否已经签到了; 
     public Button _signInBtn;
     public Text _signInBtnCount; // 显示时间
+    public Text signDayText;
 
     public Award[] awards;
     public Image[] images;
+    
+    List<bool> signInToggleStatus = new List<bool> { false, false, false, false, false, false, false };
+
+    public DateTime GetLastDay()
+    {
+        SignDate cfg = DataManager.Instance.LoadData();
+        if (cfg == null)
+        {
+            return DateTime.MinValue.Date;
+        }
+        else
+        {
+            DateTime currentDataTime = DateTime.Parse(cfg.previousSignInTime);
+            return currentDataTime;
+        }
+    }
+
+    public int GetSignCount()
+    {
+        SignDate cfg = DataManager.Instance.LoadData();
+        if (cfg == null)
+        {
+            return 0;
+        }
+        else
+        {
+            int currentSignCount = cfg.signInCount;
+            return currentSignCount;
+        }
+    }
+
     private void Awake()
     {
+        DataManager.Instance.LoadData();
+        //DataManager.Instance.SaveData(_lastDay.ToString(), _signInCount);
+        SignDate loadedData = DataManager.Instance.LoadData();
         awards = new Award[]
         {
             new Award{id = 1003, amount = 1},
@@ -40,10 +78,10 @@ public class SignSystem : MonoBehaviour
 
         _signInBtn.onClick.AddListener(OnSignInBtnClick);
         _toDay = DateTime.Now;
-        _lastDay = DateTime.Parse(PlayerPrefs.GetString(previousSignInTime, DateTime.MinValue.ToString()));
-        _signInCount = PlayerPrefs.GetInt(signInCount, 0);
+        _lastDay = GetLastDay();//DateTime.Parse(loadedData.previousSignInTime);
+        _signInCount = GetSignCount();//loadedData.signInCount;
         UpdateUI();
-
+         
         if (IsCanSignIn())
         {
             //可以签到
@@ -56,29 +94,43 @@ public class SignSystem : MonoBehaviour
             _showNextSignInTime = true;
             _signInBtn.interactable = false;
         }
+        //遍历列表里的toggle哪些是已经签到了的
+        signInToggleStatus = DataManager.Instance.LoadSignInToggleStatus();
+
+        for (int i = 0; i < _isSignInToggleTips.Length && i < signInToggleStatus.Count; i++)
+        {
+            _isSignInToggleTips[i].isOn = signInToggleStatus[i];
+        }
+
+
+        for (int i = 0; i < _isSignInToggleTips.Length; ++i)
+        {
+            
+            if (_isSignInToggleTips[i].isOn == true)
+            {
+                _signInNum++;
+            }
+        }
+        signDayText.text =  _signInNum.ToString();
     }
 
     private void UpdateUI()
-    {
-        for (int i = 0; i < _signInCount; i++)
-        {
-            _isSignInToggleTips[i].isOn = true;
-            images[i].color = new Color(0.4811321f, 0.4811321f, 0.4811321f);
-        }
+    {   
+         
     }
 
    
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.A))
+        if (Input.GetKeyDown(KeyCode.O))
         {
-            PlayerPrefs.DeleteKey(previousSignInTime);
+            DataManager.Instance.ResetData();
         }
 
-        if (Input.GetKeyDown(KeyCode.B))
+        if (Input.GetKeyDown(KeyCode.P))
         {
-            PlayerPrefs.DeleteKey(signInCount);
+            DataManager.Instance.ResetAllSignInToggle();
         }
 
         if (_isMaxSignInCount)
@@ -88,7 +140,14 @@ public class SignSystem : MonoBehaviour
 
         if (_showNextSignInTime)
         {
-            _interval = _toDay.AddDays(1).Date - DateTime.Now;
+            _interval = _toDay.AddDays(1).Date - DateTime.Now;//显示今天和明天还有多少时间差距
+
+            if (_toDay.DayOfWeek == DayOfWeek.Monday)//每个周一的时候直接刷新数据
+            {
+                DataManager.Instance.ResetData();
+                DataManager.Instance.ResetAllSignInToggle();
+            }
+
             if (_interval >= TimeSpan.Zero)
             {
                 _signInBtnCount.text = $"{_interval.Hours}:{_interval.Minutes}:{_interval.Seconds}";
@@ -106,17 +165,53 @@ public class SignSystem : MonoBehaviour
     {
         _signInCount++;
         //给奖励
-        int currentNum = _signInCount;
-        Award currenAward = awards[currentNum -1];
-        BackpackManager.Instance.AddItem(currenAward.id, currenAward.amount);//把奖励物品添加到背包
+        //int currentNum = _signInCount;
+        //Award currenAward = awards[currentNum - 1];
+        //BackpackManager.Instance.AddItem(currenAward.id, currenAward.amount);//把奖励物品添加到背包
 
-        PlayerPrefs.SetString(previousSignInTime, DateTime.Now.ToString());
-        PlayerPrefs.SetInt(signInCount, _signInCount);
+        SignDate loadedData = DataManager.Instance.LoadData();
+        DateTime currentDate = DateTime.Now.Date;
+        DateTime lastSignInDate = GetLastDay();//DateTime.Parse(loadedData.lastSignInDate);
+        int daysSinceLastSignIn = (int)currentDate.Subtract(lastSignInDate).TotalDays;
+
+        if (daysSinceLastSignIn >= 0 && daysSinceLastSignIn < awards.Length)
+        {
+            int num = (int)currentDate.DayOfWeek - 1;
+            Award currentAward = awards[num];
+            BackpackManager.Instance.AddItem(currentAward.id, currentAward.amount);
+            DataManager.Instance.SaveData(DateTime.Now.ToString(), _signInCount, currentDate.ToString());//保存签到数据
+            _isSignInToggleTips[num].isOn = true;
+            signInToggleStatus[num] = _isSignInToggleTips[num].isOn;
+            DataManager.Instance.SaveSignInToggleStatus(signInToggleStatus);
+        }
+        else
+        {
+            int current = (int)currentDate.DayOfWeek - 1;
+            current = current == 0 ? 6 : current;
+            Award currentAward = awards[current];
+            BackpackManager.Instance.AddItem(currentAward.id, currentAward.amount);
+            backpack.ShowAll();
+            DataManager.Instance.SaveData(DateTime.Now.ToString(), _signInCount, currentDate.ToString());//保存签到数据
+            _isSignInToggleTips[current].isOn = true;
+            //signInToggleStatus.Add(_isSignInToggleTips[current].isOn);
+            signInToggleStatus[current] = _isSignInToggleTips[current].isOn;
+            DataManager.Instance.SaveSignInToggleStatus(signInToggleStatus);
+        }
+
+        for (int i = 0; i < _isSignInToggleTips.Length; ++i)
+        {
+
+            if (_isSignInToggleTips[i].isOn == true)
+            {
+                _signInNum++;
+            }
+        }
+        _lastDay = DateTime.Now;
+        signDayText.text = _signInNum.ToString();
         Debug.Log("签到成功");
         _showNextSignInTime = true;
         _signInBtn.interactable = false;
 
-        UpdateUI();
     }
 
     //是否可以签到
