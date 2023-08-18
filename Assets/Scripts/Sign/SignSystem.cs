@@ -21,6 +21,7 @@ public class SignSystem : MonoBehaviour
     private bool _showNextSignInTime; //是否显示下一次签到时间
     private bool _isMaxSignInCount; //是否达到最签到次数
     private int _signInNum;
+    private int num = -1;
 
     public Toggle[] _isSignInToggleTips;//是否已经签到了; 
     public Button _signInBtn;
@@ -80,7 +81,6 @@ public class SignSystem : MonoBehaviour
         _toDay = DateTime.Now;
         _lastDay = GetLastDay();//DateTime.Parse(loadedData.previousSignInTime);
         _signInCount = GetSignCount();//loadedData.signInCount;
-        UpdateUI();
          
         if (IsCanSignIn())
         {
@@ -112,14 +112,13 @@ public class SignSystem : MonoBehaviour
             }
         }
         signDayText.text =  _signInNum.ToString();
+        //遍历toggle数组，找到最后一个toggle.isOn为true的
+        int lastToggle = GetLastSignIn();
+        for (int i = 0; i < lastToggle; i++)
+        {
+            images[i].color = new Color(0.490566f, 0.490566f, 0.490566f);
+        }
     }
-
-    private void UpdateUI()
-    {   
-         
-    }
-
-   
 
     private void Update()
     {
@@ -146,6 +145,7 @@ public class SignSystem : MonoBehaviour
             {
                 DataManager.Instance.ResetData();
                 DataManager.Instance.ResetAllSignInToggle();
+                return;
             }
 
             if (_interval >= TimeSpan.Zero)
@@ -164,10 +164,7 @@ public class SignSystem : MonoBehaviour
     public void OnSignInBtnClick()
     {
         _signInCount++;
-        //给奖励
-        //int currentNum = _signInCount;
-        //Award currenAward = awards[currentNum - 1];
-        //BackpackManager.Instance.AddItem(currenAward.id, currenAward.amount);//把奖励物品添加到背包
+        num++;
 
         SignDate loadedData = DataManager.Instance.LoadData();
         DateTime currentDate = DateTime.Now.Date;
@@ -186,8 +183,8 @@ public class SignSystem : MonoBehaviour
         }
         else
         {
-            int current = (int)currentDate.DayOfWeek - 1;
-            current = current == 0 ? 6 : current;
+            int current = num; //(int)currentDate.DayOfWeek - 1;
+            //current = current == 0 ? 6 : current;
             Award currentAward = awards[current];
             BackpackManager.Instance.AddItem(currentAward.id, currentAward.amount);
             backpack.ShowAll();
@@ -196,6 +193,7 @@ public class SignSystem : MonoBehaviour
             //signInToggleStatus.Add(_isSignInToggleTips[current].isOn);
             signInToggleStatus[current] = _isSignInToggleTips[current].isOn;
             DataManager.Instance.SaveSignInToggleStatus(signInToggleStatus);
+
         }
 
         for (int i = 0; i < _isSignInToggleTips.Length; ++i)
@@ -212,6 +210,11 @@ public class SignSystem : MonoBehaviour
         _showNextSignInTime = true;
         _signInBtn.interactable = false;
 
+        int lastToggle = GetLastSignIn();
+        for (int i = 0; i < lastToggle; i++)
+        {
+            images[i].color = new Color(0.490566f, 0.490566f, 0.490566f);
+        }
     }
 
     //是否可以签到
@@ -231,6 +234,19 @@ public class SignSystem : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    private int GetLastSignIn()
+    {
+        for (int i = _isSignInToggleTips.Length - 1; i >= 0; i--)
+        {
+            if (_isSignInToggleTips[i].isOn == true)
+            {
+                return i;
+            }
+        }
+        return 0;
+        
     }
     #region 本地时间转时间戳
     //本地时间转时间戳
