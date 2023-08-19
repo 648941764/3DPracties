@@ -173,17 +173,17 @@ public class SignSystem : MonoBehaviour
 
         if (daysSinceLastSignIn >= 0 && daysSinceLastSignIn < awards.Length)
         {
-            int num = (int)currentDate.DayOfWeek - 1;
-            Award currentAward = awards[num];
+            int CNum = num + daysSinceLastSignIn;//(int)currentDate.DayOfWeek - 1;
+            Award currentAward = awards[CNum];
             BackpackManager.Instance.AddItem(currentAward.id, currentAward.amount);
             DataManager.Instance.SaveData(DateTime.Now.ToString(), _signInCount, currentDate.ToString());//保存签到数据
-            _isSignInToggleTips[num].isOn = true;
-            signInToggleStatus[num] = _isSignInToggleTips[num].isOn;
+            _isSignInToggleTips[CNum].isOn = true;
+            signInToggleStatus[CNum] = _isSignInToggleTips[CNum].isOn;
             DataManager.Instance.SaveSignInToggleStatus(signInToggleStatus);
         }
         else
         {
-            int current = num; //(int)currentDate.DayOfWeek - 1;
+            int current = _signInCount -1; //(int)currentDate.DayOfWeek - 1;
             //current = current == 0 ? 6 : current;
             Award currentAward = awards[current];
             BackpackManager.Instance.AddItem(currentAward.id, currentAward.amount);
